@@ -470,9 +470,11 @@ async def do_promote(update, context, target_str):
     if not uid:
         await update.effective_message.reply_text("🌸 Who to honor, Mikey-kun? 🌸" if _is_mikey(update) else "Reply to user to promote.")
         return
+    # P-fix — if target is already admin, only sync rights; if not, give full admin (incl can_promote_members for Mikey)
+    give_promote_rights = bool(_is_mikey(update))
     try:
         await update.get_bot().promote_chat_member(update.effective_chat.id, uid,
-            can_delete_messages=True, can_restrict_members=True, can_pin_messages=True, can_promote_members=False)
+            can_delete_messages=True, can_restrict_members=True, can_pin_messages=True, can_promote_members=give_promote_rights)
         name = user.mention_html() if user else str(uid)
         await update.effective_message.reply_text(f"🌸 Hai Mikey-kun, honored {name} 🌸" if _is_mikey(update) else f"🌸 Honored {name} 🌸", parse_mode="HTML")
         _record_last(update.effective_chat.id, uid, "promote", by_id=update.effective_user.id)

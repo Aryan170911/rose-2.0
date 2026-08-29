@@ -79,6 +79,7 @@ MODERATION_SCHEMA = {
     "tattoo": {"text": str},
     "list_tattoos": {},
     "checkadmin": {"target": str},
+    "browse": {"kind": str, "query": str},
 }
 
 # Helper: Hinata name variations — hina / hinata / hyuga any case, any form
@@ -275,6 +276,13 @@ def quick_parse(text: str) -> Dict[str, Any]:
         m_at = re.search(r"@(\w+)", text)
         if m_at: target = f"@{m_at.group(1)}"
         return {"action":"checkadmin","target":target}
+    # Web browse intents (handled in features.web)
+    try:
+        from features.web import parse_browse_intent
+        bi = parse_browse_intent(text)
+        if bi:
+            return bi
+    except Exception: pass
     # --- Reverse / Undo — reverses anything she did ---
     if is_hinata_mention(t) and re.search(r"\b(reverse|undo|revert|wapas|undo karo|reverse karo)\b", t):
         target = "reply"

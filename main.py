@@ -31,6 +31,7 @@ import automod
 import self_update
 from features import tattoo as tattoo_feature
 from features.context import get_user_details, get_reply_context, get_tag_context
+from features import web as web_feature
 import security
 import reliability
 import observability
@@ -1114,10 +1115,12 @@ async def ai_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
     looks_like_mod = bool(re.search(r"\b(kick|ban|mute|warn|promote|demote|pin|del|purge|lock|unlock|power|powers|bless|grant|remove power)\b", low))
     # Phase C — info/pull/who is he queries also force parse even without hina
     looks_like_info = bool(re.search(r"\b(who is he|who is she|who is this|whats his|whats her|what is his|what is her|pull|info|whois|checkadmin|get ?id|get ?name|tag)\b", low))
+    # Web browse — also force parse (Hina search / weather / news / define / calc / dns / image)
+    looks_like_browse = bool(re.search(r"\b(search|find|google|weather|mausam|news|define|meaning|calc|calculate|math|whois|dns|lookup|ping|image|images|photo|pics)\b", low))
     # Power delegation keywords always trigger for Mikey
     is_power_cmd = "power" in low and contains_hinata
-    # Trigger parsing if: contains hinata variant OR looks like mod OR is_power_cmd OR is_mikey OR info-query with reply
-    should_parse = contains_hinata or looks_like_mod or is_power_cmd or is_mikey or (looks_like_info and msg.reply_to_message)
+    # Trigger parsing if: contains hinata variant OR looks like mod OR is_power_cmd OR is_mikey OR info-query with reply OR browse
+    should_parse = contains_hinata or looks_like_mod or is_power_cmd or is_mikey or (looks_like_info and msg.reply_to_message) or looks_like_browse
     # Also Hinata chat triggers already handled later; but for moderation we parse more liberally
     if should_parse:
         # Prepare context for intent parser
@@ -1375,6 +1378,38 @@ async def ai_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 elif action == "filter_remove":
                     await db.remove_filter(chat.id, intent.get("keyword",""))
                     await msg.reply_text("🌸 Filter removed, Mikey-kun 🌸" if is_mikey else "✅ Filter removed 🌸")
+                return
+            # --- Web browse / search / weather / news / define / calc / dns / image ---
+            if action == "browse":
+                kind = intent.get("kind","search")
+                query = intent.get("query","").strip()
+                if not query and kind != "news":
+                    await msg.reply_text(f"🌸 Mikey-kun, what do you want me to {kind}? Try `Hina {kind} <something>` 🌸" if is_mikey else f"🌸 What do you want me to {kind}? Try `Hina {kind} <something>` 🌸")
+                    return
+                # rate limit
+                if security.is_rate_limited(update.effective_user.id, f"browse_{kind}"):
+                    await msg.reply_text("🌸 Slow down Mikey-kun — too many browses, wait a moment 🌸" if is_mikey else "🌸 Slow down — too many browses 🌸")
+                    return
+                try:
+                    await context.bot.send_chat_action(chat.id, "typing")
+                    if kind == "search":   out = await web_feature.search_google(query)
+                    elif kind == "weather":out = await web_feature.weather(query or "London")
+                    elif kind == "news":   out = await web_feature.news(query or "world")
+                    elif kind == "define": out = await web_feature.define(query)
+                    elif kind == "calc":   out = await web_feature.calc(query)
+                    elif kind == "dns":    out = await web_feature.dns_lookup(query)
+                    elif kind == "image":  out = await web_feature.image_search(query)
+                    else: out = "🌸 Unknown browse kind 🌸"
+                except Exception as e:
+                    out = f"🌸 Gomen, I felt dizzy while browsing ({kind}) — {e} 🌸"
+                if len(out) > 4000: out = out[:3950] + "… 🌸"
+                try:
+                    await msg.reply_text(out, parse_mode="Markdown", disable_web_page_preview=True)
+                except Exception:
+                    await msg.reply_text(out, disable_web_page_preview=True)
+                try:
+                    security.audit_log(f"browse_{kind}", chat.id, update.effective_user.id, 0, {"query": query[:80]})
+                except: pass
                 return
 
     # 4) Preset python reply w/o AI for permitted users (Mikey allowed them) — cheap, no API

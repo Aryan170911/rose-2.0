@@ -187,6 +187,34 @@ The old project at `C:\Users\Toshi\Desktop\new albedo\` remains as the live runn
 3. Copy `.env.example` → `.env`, fill `BOT_TOKEN`, `OWNER_ID`, `MONGO_URI`, `AI_PROVIDER`, provider key.
 4. `python main.py` (polling) or `RUN_MODE=webhook WEBHOOK_URL=… python main.py` (webhook).
 
+## [Unreleased] — 2026-08-29 (continued)
+
+### Fixed
+- **do_promote `can't change rights` (BadRequest)** — `_try_known_fix` applied patch via `Hina fix your code:`:
+  - `moderation.py` `do_promote` now sets `can_promote_members=bool(_is_mikey(update))` → Mikey grants full admin (with promote rights), non-Mikey admins get limited. Verified end-to-end: Yo OYO promoted successfully with `can_promote_members=True`.
+- **Self-update actually applies known fixes** (was only drafting) — `self_update.py` now:
+  1. Tries `_try_known_fix(fault)` first (deterministic, no AI, instant).
+  2. If applied, marks `fix_requests` status `pending` → `applied` in Mongo.
+  3. Hot-reloads via `importlib.reload` and replies with the hot-reload confirmation.
+  4. Falls back to AI patch (was the only path before) only when no known fix matches.
+- **Hot-reload + graceful deploy** — already live (no change), now exercised on the do_promote patch.
+
+### Added
+- **Hinata Web — internet browsing** (`features/web.py`):
+  - `Hina search <q>` / `Hina find` / `Hina google` — DuckDuckGo HTML search (top 5 results, title + URL + snippet).
+  - `Hina weather <city>` / `Hina mausam <city>` — wttr.in current conditions, °C, feels, humidity, wind.
+  - `Hina news` / `Hina news tech` / `Hina news science` — RSS top 5 (BBC World, The Verge, ScienceDaily).
+  - `Hina define <word>` / `Hina meaning of <word>` — dictionaryapi.dev definition + example.
+  - `Hina calc <expr>` / `Hina math <expr>` — mathjs.org compute.
+  - `Hina dns <domain>` / `Hina whois <domain>` / `Hina ping <domain>` — Google DNS-over-HTTPS A-records.
+  - `Hina image <query>` / `Hina photo <q>` / `Hina pics <q>` — DuckDuckGo image search link.
+  - All endpoints cached 10 min (TTL), rate-limited 5/60s per kind per user, soft-error wrapped (`🌸 Gomen, I felt dizzy while browsing (...) 🌸`), output capped 4000 chars, link previews off, audited to owner DM.
+- **`browse` action schema** in `ai_engine.py:75` with kind/query.
+- **`looks_like_browse` parse trigger** in `main.py:1083` — no `hina` mention required for browse keywords (so `weather Tokyo` in DM works too).
+
+### Tests
+- All 7 tests still PASS: `test_is_hinata_mention`, `test_quick_parse`, `test_security`, `test_read_only_actions`, `test_exfil_and_injection`, `test_db`, plus quick_parse for browse.
+
 ---
 
 [1.0.0]: https://github.com/Aryan170911/rose-2.0/releases/tag/v1.0.0 (planned)
