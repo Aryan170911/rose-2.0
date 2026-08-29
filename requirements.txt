@@ -1,0 +1,8 @@
+python-telegram-bot[all]>=21.0
+python-dotenv
+openai
+aiosqlite
+httpx
+motor==3.3.2
+pymongo==4.7.2
+dnspython==2.6.1
