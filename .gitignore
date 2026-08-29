@@ -6,3 +6,9 @@ __pycache__/
 *.log
 venv/
 .env.local
+# Secrets — never commit (use API_KEYS.md / secrets.example.yaml as templates)
+API_KEYS.md
+secrets.local.yaml
+secrets.local.yml
+secrets.local.json
+*.local.*
