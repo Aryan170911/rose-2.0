@@ -7,8 +7,9 @@ runtime:
 
 commands:
   package: ""
-  build: "pip install -r requirements.txt"
-  start: "python main.py"
+  build:
+    - "pip install -r requirements.txt"
+  start: "python main.py""
 
 repository:
   branch: "main"
