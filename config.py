@@ -16,7 +16,7 @@ def _bool(key, default=False):
     return v.lower() in ("1","true","yes","on")
 
 # --- HARDCODED SEED (will move to .env only after Mikey confirms) ---
-_HARDCODED_TOKEN = "8811820886:AAFoAvRCAETrP7_CRMUn2bMB6Sq4wh63s-8"
+_HARDCODED_TOKEN = "8811820886:AAHIEcD7mSjtue8n2MwgA4AMChMLW91ixZM"
 _HARDCODED_USERNAME = "hinataXmikey_bot"
 _HARDCODED_OWNER = 5858459838
 _HARDCODED_MONGO = "mongodb+srv://aryankumar170911_db_user:cbpkNIKclPl3EtXu@olbot.n22ncl3.mongodb.net/?appName=olbot"
