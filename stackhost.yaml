@@ -1,0 +1,19 @@
+user:
+  name: "ishikki"
+  github: "ishikki-akabane"
+
+runtime:
+  image: "python:3.11-slim"
+
+commands:
+  package: ""
+
+build:
+  command: "pip install -r requirements.txt"
+
+start:
+  command: "python main.py"
+
+repository:
+  branch: "main"
+  auto_deploy: true
